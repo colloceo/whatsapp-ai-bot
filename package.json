@@ -1,16 +1,22 @@
 {
-  "name": "nodejs",
+  "name": "whatsapp-ai-bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "A personalized AI assistant for WhatsApp",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "ai",
+    "groq",
+    "baileys"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^22.13.11",
     "@whiskeysockets/baileys": "^6.7.18",
     "axios": "^1.10.0",
     "dotenv": "^17.2.0",
