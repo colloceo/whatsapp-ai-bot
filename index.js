@@ -33,8 +33,8 @@ async function getAIReply(message) {
     return null;
   }
 
-  // Using a reliable conversational model that works with the Inference API
-  const model = "microsoft/DialoGPT-medium";
+  // Using GPT-2 which is reliable and works with the Inference API
+  const model = "gpt2";
   const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
 
   // Hugging Face API expects a single string prompt. We combine our personality and the user's message.
@@ -43,13 +43,10 @@ async function getAIReply(message) {
   console.log(`Sending prompt to Hugging Face: "${fullPrompt}"`);
 
   const requestData = {
-    inputs: {
-      past_user_inputs: [],
-      generated_responses: [],
-      text: message
-    },
+    inputs: fullPrompt,
     parameters: {
-        max_length: 100,
+        max_new_tokens: 50,
+        return_full_text: false,
         temperature: 0.7,
         do_sample: true
     }
@@ -62,8 +59,8 @@ async function getAIReply(message) {
 
   try {
     const response = await axios.post(apiUrl, requestData, { headers });
-    // DialoGPT returns the response in a different format
-    const reply = response.data.generated_text || response.data.conversation?.generated_text || "Sorry, I couldn't generate a response.";
+    // GPT-2 returns an array with generated_text
+    const reply = response.data[0]?.generated_text?.trim() || "Sorry, I couldn't generate a response.";
 
     console.log(`AI generated reply: "${reply}"`);
     return reply;
