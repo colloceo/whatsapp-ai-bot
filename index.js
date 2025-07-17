@@ -6,52 +6,81 @@ const {
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const axios = require('axios');
+const express = require('express');
 
-// --- START OF AI CONFIGURATION ---
+// --- WEB SERVER SETUP (FOR 24/7 HOSTING) ---
+const app = express();
+const port = process.env.PORT || 3000;
 
-const personalityPrompt = process.env.BOT_PERSONALITY_PROMPT || "You are a helpful assistant. Keep your replies short and friendly.";
-const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+app.get('/', (req, res) => {
+  res.send('<h1>WhatsApp AI Bot is alive! (Hugging Face)</h1><p>The bot is running correctly. Uptime monitoring is active.</p>');
+});
+
+app.listen(port, () => {
+  console.log(`Web server listening on port ${port}. Ready for uptime pings.`);
+});
+// --- END OF WEB SERVER SETUP ---
+
+
+// --- START OF AI CONFIGURATION (Hugging Face Version) ---
+const personalityPrompt = process.env.BOT_PERSONALITY_PROMPT || "You are a helpful assistant.";
+// Get the new token from secrets
+const huggingFaceToken = process.env.HUGGING_FACE_TOKEN;
 
 async function getAIReply(message) {
-  if (!openRouterApiKey || !message) {
-    console.error("Missing API key or message.");
+  if (!huggingFaceToken || !message) {
+    console.error("CRITICAL: HUGGING_FACE_TOKEN is missing from secrets!");
     return null;
   }
 
-  console.log(`Sending message to AI: "${message}"`);
-  const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+  // We recommend a reliable conversational model. You can find others on the Hugging Face Hub.
+  const model = "mistralai/Mistral-7B-Instruct-v0.1";
+  const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+
+  // Hugging Face API expects a single string prompt. We combine our personality and the user's message.
+  const fullPrompt = `${personalityPrompt}\n\nUser: ${message}\nCollins:`;
+
+  console.log(`Sending prompt to Hugging Face: "${fullPrompt}"`);
+
   const requestData = {
-    model: "mistralai/mistral-7b-instruct:free",
-    messages: [
-      { role: "system", content: personalityPrompt },
-      { role: "user", content: message },
-    ],
+    inputs: fullPrompt,
+    parameters: {
+        max_new_tokens: 100, // Controls max length of the reply
+        return_full_text: false, // Important: only return the generated reply
+        temperature: 0.7, // Controls creativity
+    }
   };
+
   const headers = {
-    'Authorization': `Bearer ${openRouterApiKey}`,
+    'Authorization': `Bearer ${huggingFaceToken}`,
     'Content-Type': 'application/json'
   };
 
   try {
     const response = await axios.post(apiUrl, requestData, { headers });
-    const reply = response.data.choices[0].message.content;
+    // The response is usually an array, and the text is in the 'generated_text' field
+    const reply = response.data[0].generated_text.trim();
+
     console.log(`AI generated reply: "${reply}"`);
     return reply;
+
   } catch (error) {
+    console.error("--- ERROR CALLING HUGGING FACE API ---");
     if (error.response) {
-      console.error("Error getting AI reply:", error.response.data);
+      console.error("Data:", error.response.data);
+      console.error("Status:", error.response.status);
     } else {
-      console.error("Error getting AI reply:", error.message);
+      console.error("Error Message:", error.message);
     }
-    return "Sorry, I'm having a little trouble thinking right now. 😅";
+    console.error("------------------------------------");
+
+    return "Aii, AI yangu imechoka kidogo. Try again later. 😅";
   }
 }
-
 // --- END OF AI CONFIGURATION ---
 
 
-// --- START OF WHATSAPP BOT LOGIC ---
-
+// --- START OF WHATSAPP BOT LOGIC (No changes needed here) ---
 async function connectToWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
 
@@ -68,18 +97,7 @@ async function connectToWhatsApp() {
     }
     if (connection === "close") {
       const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-      const statusCode = (lastDisconnect.error)?.output?.statusCode;
-      console.log("Connection closed due to ", lastDisconnect.error, ", reconnecting ", shouldReconnect);
-      
-      // Don't reconnect on auth failures (401) - require fresh QR scan
-      if (statusCode === 401) {
-        console.log("Authentication failed. Please clear auth folder and restart for fresh QR code.");
-        return;
-      }
-      
-      if (shouldReconnect) {
-        connectToWhatsApp();
-      }
+      if (shouldReconnect) { connectToWhatsApp(); }
     } else if (connection === "open") {
       console.log("WhatsApp connection opened successfully!");
     }
@@ -89,18 +107,15 @@ async function connectToWhatsApp() {
 
   sock.ev.on("messages.upsert", async (m) => {
     const msg = m.messages[0];
-
     if (!msg.message || msg.key.fromMe || msg.key.remoteJid.endsWith('@g.us')) {
       return;
     }
-
     const incomingMessage = msg.message.conversation || msg.message.extendedTextMessage?.text;
-
     if (incomingMessage) {
       console.log(`Received message from ${msg.pushName} (${msg.key.remoteJid}): "${incomingMessage}"`);
       const aiReply = await getAIReply(incomingMessage);
       if (aiReply) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
         await sock.sendMessage(msg.key.remoteJid, { text: aiReply });
         console.log(`Sent reply to ${msg.pushName}.`);
       }
