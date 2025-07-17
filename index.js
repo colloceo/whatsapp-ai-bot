@@ -3,8 +3,7 @@ const {
   useMultiFileAuthState,
   DisconnectReason
 } = require("@whiskeysockets/baileys");
-// CORRECTED IMPORT for makeInMemoryStore
-const makeInMemoryStore = require('@whiskeysockets/baileys/lib/store').default;
+const { makeInMemoryStore } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const axios = require('axios');
