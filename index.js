@@ -68,7 +68,15 @@ async function connectToWhatsApp() {
     }
     if (connection === "close") {
       const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+      const statusCode = (lastDisconnect.error)?.output?.statusCode;
       console.log("Connection closed due to ", lastDisconnect.error, ", reconnecting ", shouldReconnect);
+      
+      // Don't reconnect on auth failures (401) - require fresh QR scan
+      if (statusCode === 401) {
+        console.log("Authentication failed. Please clear auth folder and restart for fresh QR code.");
+        return;
+      }
+      
       if (shouldReconnect) {
         connectToWhatsApp();
       }
