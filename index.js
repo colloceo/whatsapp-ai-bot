@@ -11,77 +11,75 @@ const express = require('express');
 // --- WEB SERVER SETUP (FOR 24/7 HOSTING) ---
 const app = express();
 const port = process.env.PORT || 3000;
-
 app.get('/', (req, res) => {
-  res.send('<h1>WhatsApp AI Bot is alive! (Hugging Face)</h1><p>The bot is running correctly. Uptime monitoring is active.</p>');
+  res.send('<h1>WhatsApp AI Bot is alive! (GroqCloud + Memory)</h1>');
 });
-
 app.listen(port, () => {
-  console.log(`Web server listening on port ${port}. Ready for uptime pings.`);
+  console.log(`Web server listening on port ${port}.`);
 });
 // --- END OF WEB SERVER SETUP ---
 
+// --- NEW: MEMORY MANAGEMENT ---
+const conversationHistory = {}; // Stores conversation logs for each user
+const MEMORY_LIMIT = 10; // Number of past messages to remember (user + bot)
+// --- END OF MEMORY MANAGEMENT ---
 
-// --- START OF AI CONFIGURATION (Hugging Face Version) ---
+
+// --- START OF AI CONFIGURATION (GroqCloud) ---
 const personalityPrompt = process.env.BOT_PERSONALITY_PROMPT || "You are a helpful assistant.";
-// Get the new token from secrets
-const huggingFaceToken = process.env.HUGGING_FACE_TOKEN;
+const groqApiKey = process.env.GROQ_API_KEY;
 
-async function getAIReply(message) {
-  if (!huggingFaceToken || !message) {
-    console.error("CRITICAL: HUGGING_FACE_TOKEN is missing from secrets!");
+// UPDATED FUNCTION: Now accepts a history of past messages
+async function getAIReply(userMessage, history = []) {
+  if (!groqApiKey || !userMessage) {
+    console.error("CRITICAL: Groq API Key or message is missing!");
     return null;
   }
 
-  // Using GPT-2 which is reliable and works with the Inference API
-  const model = "gpt2";
-  const apiUrl = `https://api-inference.huggingface.co/models/${model}`;
+  const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
 
-  // Hugging Face API expects a single string prompt. We combine our personality and the user's message.
-  const fullPrompt = `${personalityPrompt}\n\nUser: ${message}\nCollins:`;
-
-  console.log(`Sending prompt to Hugging Face: "${fullPrompt}"`);
+  // Construct the message list with full history
+  const messages = [
+    { role: "system", content: personalityPrompt },
+    ...history, // Spread the past messages into the array
+    { role: "user", content: userMessage } // Add the new user message
+  ];
 
   const requestData = {
-    inputs: fullPrompt,
-    parameters: {
-        max_new_tokens: 50,
-        return_full_text: false,
-        temperature: 0.7,
-        do_sample: true
-    }
+    model: "llama3-8b-8192",
+    messages: messages, // Send the full conversation
+    temperature: 0.7,
+    max_tokens: 150,
   };
 
   const headers = {
-    'Authorization': `Bearer ${huggingFaceToken}`,
+    'Authorization': `Bearer ${groqApiKey}`,
     'Content-Type': 'application/json'
   };
 
+  console.log(`Sending prompt to GroqCloud with ${history.length} past messages...`);
+
   try {
     const response = await axios.post(apiUrl, requestData, { headers });
-    // GPT-2 returns an array with generated_text
-    const reply = response.data[0]?.generated_text?.trim() || "Sorry, I couldn't generate a response.";
+    const reply = response.data.choices[0].message.content.trim();
 
-    console.log(`AI generated reply: "${reply}"`);
+    console.log(`Groq AI generated reply: "${reply}"`);
     return reply;
-
   } catch (error) {
-    console.error("--- ERROR CALLING HUGGING FACE API ---");
+    console.error("--- ERROR CALLING GROQ API ---");
     if (error.response) {
       console.error("Data:", error.response.data);
       console.error("Status:", error.response.status);
     } else {
       console.error("Error Message:", error.message);
     }
-    console.error("------------------------------------");
-
-    return "Aii, AI yangu imechoka kidogo. Try again later. 😅";
+    return "Aii, AI yangu iko na issue kidogo. Try again in a moment. 😅";
   }
 }
 // --- END OF AI CONFIGURATION ---
 
 
-// --- START OF WHATSAPP BOT LOGIC (No changes needed here) ---
+// --- START OF WHATSAPP BOT LOGIC ---
 async function connectToWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
 
@@ -106,18 +104,42 @@ async function connectToWhatsApp() {
 
   sock.ev.on("creds.update", saveCreds);
 
+  // UPDATED MESSAGE HANDLER WITH MEMORY
   sock.ev.on("messages.upsert", async (m) => {
     const msg = m.messages[0];
     if (!msg.message || msg.key.fromMe || msg.key.remoteJid.endsWith('@g.us')) {
       return;
     }
+
     const incomingMessage = msg.message.conversation || msg.message.extendedTextMessage?.text;
+    const remoteJid = msg.key.remoteJid; // User's WhatsApp ID
+
     if (incomingMessage) {
-      console.log(`Received message from ${msg.pushName} (${msg.key.remoteJid}): "${incomingMessage}"`);
-      const aiReply = await getAIReply(incomingMessage);
+      console.log(`Received message from ${msg.pushName} (${remoteJid}): "${incomingMessage}"`);
+
+      // 1. Initialize history for new users
+      if (!conversationHistory[remoteJid]) {
+        conversationHistory[remoteJid] = [];
+      }
+      const userHistory = conversationHistory[remoteJid];
+
+      // 2. Get AI reply, passing the current user's history
+      const aiReply = await getAIReply(incomingMessage, userHistory);
+
       if (aiReply) {
-        await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
-        await sock.sendMessage(msg.key.remoteJid, { text: aiReply });
+        // 3. Update history with the new exchange
+        userHistory.push({ role: 'user', content: incomingMessage });
+        userHistory.push({ role: 'assistant', content: aiReply });
+
+        // 4. Trim the history to the memory limit
+        if (userHistory.length > MEMORY_LIMIT) {
+          conversationHistory[remoteJid] = userHistory.slice(userHistory.length - MEMORY_LIMIT);
+          console.log(`History for ${remoteJid} trimmed to ${MEMORY_LIMIT} messages.`);
+        }
+
+        // 5. Send the reply
+        await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
+        await sock.sendMessage(remoteJid, { text: aiReply });
         console.log(`Sent reply to ${msg.pushName}.`);
       }
     }
