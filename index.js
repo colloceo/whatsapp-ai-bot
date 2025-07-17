@@ -3,7 +3,6 @@ const {
   useMultiFileAuthState,
   DisconnectReason
 } = require("@whiskeysockets/baileys");
-const { makeInMemoryStore } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const qrcode = require("qrcode-terminal");
 const axios = require('axios');
@@ -53,11 +52,6 @@ async function getAIReply(message) {
 
 // --- START OF WHATSAPP BOT LOGIC ---
 
-// This should now work correctly with the new import
-const store = makeInMemoryStore({
-  logger: pino().child({ level: "silent", stream: "store" })
-});
-
 async function connectToWhatsApp() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info_baileys");
 
@@ -66,8 +60,6 @@ async function connectToWhatsApp() {
     printQRInTerminal: true,
     auth: state,
   });
-
-  store.bind(sock.ev);
 
   sock.ev.on("connection.update", (update) => {
     const { connection, lastDisconnect, qr } = update;
