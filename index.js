@@ -33,6 +33,9 @@ const groqApiKey = process.env.GROQ_API_KEY;
 async function getAIReply(userMessage, history = []) {
   if (!groqApiKey || !userMessage) {
     console.error("CRITICAL: Groq API Key or message is missing!");
+    console.error("API Key present:", !!groqApiKey);
+    console.error("API Key length:", groqApiKey ? groqApiKey.length : 0);
+    console.error("Message present:", !!userMessage);
     return null;
   }
 
@@ -58,6 +61,8 @@ async function getAIReply(userMessage, history = []) {
   };
 
   console.log(`Sending prompt to GroqCloud with ${history.length} past messages...`);
+  console.log(`Total messages in request: ${messages.length}`);
+  console.log(`API Key first 10 chars: ${groqApiKey ? groqApiKey.substring(0, 10) + '...' : 'MISSING'}`);
 
   try {
     const response = await axios.post(apiUrl, requestData, { headers });
