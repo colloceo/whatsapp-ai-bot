@@ -12,7 +12,7 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
 app.get('/', (req, res) => {
-  res.send('<h1>WhatsApp AI Bot is alive! (GroqCloud + Memory + Status Viewer)</h1>');
+  res.send('<h1>WhatsApp AI Bot is alive! (GroqCloud + Memory + Status + Channel Filter)</h1>');
 });
 app.listen(port, () => {
   console.log(`Web server listening on port ${port}.`);
@@ -84,35 +84,38 @@ async function connectToWhatsApp() {
 
   sock.ev.on("messages.upsert", async (m) => {
     const msg = m.messages[0];
-    if (!msg.message || msg.key.fromMe) {
-      return;
-    }
-
     const remoteJid = msg.key.remoteJid;
 
-    // --- NEW FEATURE: VIEW STATUSES AUTOMATICALLY ---
+    // --- NEW, MORE ROBUST FILTER AT THE TOP ---
+    // This now ignores messages from self, empty messages, and messages from channels.
+    if (!msg.message || msg.key.fromMe || remoteJid.endsWith('@newsletter')) {
+      if (remoteJid && remoteJid.endsWith('@newsletter')) {
+        console.log(`[CHANNEL] Ignored a message from channel: ${remoteJid}`);
+      }
+      return;
+    }
+    // --- END OF NEW FILTER ---
+
+    // Feature: View Statuses Automatically
     if (remoteJid === 'status@broadcast') {
       const sender = msg.key.participant || msg.participant;
       console.log(`[STATUS] Detected a new status update from ${sender}`);
       try {
-        // Add a human-like delay before "viewing"
-        await new Promise(resolve => setTimeout(resolve, 3000)); // 3-second delay
-
-        // Send the read receipt for the status
+        await new Promise(resolve => setTimeout(resolve, 3000));
         await sock.readMessages([msg.key]);
         console.log(`[STATUS] Successfully marked status from ${sender} as read.`);
       } catch (err) {
         console.error(`[STATUS] Failed to mark status as read for ${sender}:`, err);
       }
-      return; // Stop further processing for status messages
+      return;
     }
-    // --- END OF FEATURE ---
 
     // Ignore group chats for AI replies
     if (remoteJid.endsWith('@g.us')) {
       return;
     }
 
+    // Process direct messages with AI
     const incomingMessage = msg.message.conversation || msg.message.extendedTextMessage?.text;
     if (incomingMessage) {
       console.log(`Received message from ${msg.pushName} (${remoteJid}): "${incomingMessage}"`);
