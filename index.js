@@ -95,15 +95,27 @@ async function connectToWhatsApp() {
 
   sock.ev.on("connection.update", (update) => {
     const { connection, lastDisconnect, qr } = update;
+    
+    console.log("Connection update:", connection);
+    
     if (qr) {
-      console.log("QR code generated. Please scan with your phone.");
+      console.log("\n=== QR CODE GENERATED ===");
+      console.log("Please scan this QR code with your WhatsApp:");
       qrcode.generate(qr, { small: true });
+      console.log("========================\n");
     }
+    
     if (connection === "close") {
+      console.log("Connection closed. Reason:", lastDisconnect?.error?.output?.statusCode);
       const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-      if (shouldReconnect) { connectToWhatsApp(); }
+      if (shouldReconnect) { 
+        console.log("Attempting to reconnect...");
+        connectToWhatsApp(); 
+      }
     } else if (connection === "open") {
-      console.log("WhatsApp connection opened successfully!");
+      console.log("✅ WhatsApp connection opened successfully!");
+    } else if (connection === "connecting") {
+      console.log("🔄 Connecting to WhatsApp...");
     }
   });
 
