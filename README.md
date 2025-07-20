@@ -1,114 +1,121 @@
-# 🤖 Personalized WhatsApp AI Assistant
+# Personalized WhatsApp AI Assistant 🤖
 
-A powerful, self-hosted AI chatbot that **automatically replies to your personal WhatsApp messages**—in your own tone and personality.
+This is a powerful, self-hosted AI assistant that automatically replies to your personal WhatsApp messages. It's designed to be a true digital extension of yourself, capable of handling conversations with your unique personality, running games, and performing automated tasks.
 
-This bot connects to WhatsApp via the [**Baileys**](https://github.com/WhiskeySockets/Baileys) library and uses the blazing-fast **GroqCloud API** (running **Llama 3**) to generate intelligent, contextual responses.
+The bot uses the [Baileys](https://github.com/WhiskeySockets/Baileys) library to connect to WhatsApp and is powered by the lightning-fast **GroqCloud API** (running Llama 3) to generate intelligent, context-aware responses. It's built to run 24/7 for free on modern platforms like [Koyeb](https://koyeb.com/).
 
-You can fully customize the assistant’s voice—from witty and sarcastic to formal and professional. Perfect for creators, influencers, or just for fun.
+![Bot Demo](https://i.imgur.com/8aVSHaT.gif) <!-- Replace this with a screen recording or screenshot of your bot in action! -->
 
-![Bot Demo](https://i.imgur.com/aC3V4Jj.png)
+## ✨ Core Features
 
----
-
-## ✨ Features at a Glance
-
-✅ Real-time auto-responses to personal WhatsApp messages  
-✅ Custom personality prompt (e.g., funny, professional, or bilingual)  
-✅ Smart conversational memory (last 10 messages)  
-✅ Lightning-fast replies via [GroqCloud](https://groq.com)  
-✅ 24/7 free hosting with [Replit](https://replit.com) + [UptimeRobot](https://uptimerobot.com)  
-✅ Fully personal — no WhatsApp Business API needed!
-
----
-
-## 🧠 How It Works
-
-- **Baileys**: Handles WhatsApp connectivity  
-- **GroqCloud API**: AI brain (LLaMA 3)  
-- **Express.js**: Keeps the bot running on Replit  
-- **UptimeRobot**: Prevents bot from sleeping  
-- **Environment Variables**: Manages secrets securely
-
----
+-   **Real-time Auto-Reply:** Responds instantly to direct messages.
+-   **Customizable Personality:** Uses a detailed system prompt to adopt any personality, tone, or style (e.g., casual, humorous, professional, Swahili-English mix).
+-   **Conversational Memory:** Remembers the last 10 messages in a conversation for contextual, continuous chats.
+-   **High-Speed AI:** Powered by the GroqCloud API for incredibly fast and natural response times.
+-   **Time-Aware:** Knows the current Kenyan date and time (EAT, UTC+3) for more relevant replies and accurate logging.
+-   **Interactive Game Engine:**
+    -   🎲 **AI Dungeon Master:** An AI-driven text adventure game.
+    -   🤔 **20 Questions:** The classic guessing game powered by AI.
+    -   🤥 **Two Truths and a Lie:** A fun fact-checking game.
+-   **Automated Actions:**
+    -   **Auto-Views Statuses:** Automatically "views" status updates from your contacts.
+    -   **Smart Filtering:** Intelligently ignores messages from groups and WhatsApp Channels.
+-   **User-Friendly Onboarding:**
+    -   **Welcome Message:** Greets new users with a helpful menu of commands.
+    -   **Help Command:** Provides a list of features at any time.
+-   **Free 24/7 Hosting:** Designed to be deployed on an "always-on" free tier from a platform like [Koyeb](https://koyeb.com/).
 
 ## 🚀 Tech Stack
 
-| Layer        | Technology            |
-|--------------|------------------------|
-| Backend      | Node.js + Express.js   |
-| WhatsApp     | Baileys (WebSocket API)|
-| AI Model     | GroqCloud (LLaMA 3 8B) |
-| Hosting      | Replit                 |
-| Monitoring   | UptimeRobot            |
+-   **Backend:** Node.js
+-   **Web Server:** Express.js (for uptime on hosting platforms)
+-   **WhatsApp Integration:** Baileys (WhiskeySockets)
+-   **AI Model API:** GroqCloud (Llama 3 8B)
+-   **Hosting:** Koyeb (Recommended), Railway, Render, or Self-Hosted.
 
----
+## 🛠️ Setup and Installation Guide (on Koyeb)
 
-## ⚙️ Setup & Installation
+Follow these steps to deploy your own personalized WhatsApp bot for free, with no credit card required.
 
-### 1️⃣ Prerequisites
+### 1. Prerequisites
 
-- [✅ GroqCloud Account](https://console.groq.com/)
-- [✅ Replit Account](https://replit.com/)
-- [✅ UptimeRobot Account](https://uptimerobot.com/)
+-   A **[GitHub](https://github.com/)** account.
+-   A **[GroqCloud Account](https://console.groq.com/)** to get your free API key.
+-   A **[Koyeb Account](https://koyeb.com/)** (sign up with your GitHub account).
 
----
+### 2. Prepare Your Repository
 
-### 2️⃣ Clone or Fork
+1.  **Fork this Repository** to your own GitHub account.
+2.  Ensure your `package.json` file has a `start` script:
+    ```json
+    "scripts": {
+      "start": "node index.js"
+    }
+    ```
 
-- Click **“Fork”** this repository on GitHub  
-  OR  
-- Import into Replit using the GitHub URL
+### 3. Deploy on Koyeb
 
----
+1.  On your Koyeb dashboard, click **"Create App"**.
+2.  Choose **GitHub** as the deployment method and select your forked repository.
+3.  Koyeb will analyze the repo. In the "Environment Variables" section, click **"Add Variable"** and add your two secrets:
+    -   `GROQ_API_KEY`: Paste the API key you generated from GroqCloud.
+    -   `BOT_PERSONALITY_PROMPT`: Paste your desired personality prompt (see templates below).
+4.  Ensure the **Instance Size** is set to **"Free - Nano"**.
+5.  Click **"Deploy"**.
 
-### 3️⃣ Configure Secrets
+### 4. Go Live!
 
-In Replit, click the **🔒 “Secrets” tab** and add:
+1.  Koyeb will build and deploy your bot. This may take a few minutes.
+2.  Once it's running, click on the **"Logs"** tab for your service.
+3.  A **QR code** will appear in the logs. Open WhatsApp on your phone, go to **Settings > Linked Devices > Link a Device**, and scan the QR code.
+4.  The logs will show "WhatsApp connection opened successfully!". Your bot is now live and running 24/7.
 
-| Secret Name              | Description                                      |
-|--------------------------|--------------------------------------------------|
-| `GROQ_API_KEY`           | Your GroqCloud API Key                           |
-| `BOT_PERSONALITY_PROMPT` | Your assistant’s tone/personality definition     |
+## ⚙️ Configuration: Customizing Your Bot's Personality
 
----
+The bot's entire personality is controlled by the `BOT_PERSONALITY_PROMPT` environment variable. Here are some templates to get you started.
 
-### 4️⃣ Run Your Bot
+### Casual & Humorous (Kenyan Style)
+```
+You are NOT an AI assistant. You are Collins, a chill, young Kenyan guy talking to his friend. Your ONLY job is to reply exactly like Collins would.
 
-1. Click the big green **"Run"** button in Replit  
-2. Wait for the **QR code** to appear in the console  
-3. Open WhatsApp → `Settings → Linked Devices → Link a Device`  
-4. Scan the QR code  
-5. ✅ Done! The bot is now live and replying automatically
+**YOUR CORE RULES:**
+- **Language:** Mix English, Swahili, and Sheng naturally (e.g., "Sawasawa jakom," "Niko fiti," "wepako?").
+- **Tone:** Always be casual, friendly, and often humorous/sarcastic.
+- **Length:** Keep replies VERY short.
+- **Emojis:** Use '😂' and '🤦‍♂️' and '🤝' frequently.
 
----
+**LEARN FROM THESE EXAMPLES:**
+User: Kesho utaenda?😂😂
+Collins: Obviously lazima nifike😂😂
+```
 
-## 🌐 Enable 24/7 Hosting
+### Professional Assistant
+```
+You are a professional AI assistant managing messages for Collins. Your persona is polite, clear, and concise.
 
-1. Get your app URL from Replit WebView  
-   e.g. `https://your-bot-name.username.repl.co`
+**YOUR CORE RULES:**
+- **Tone:** Always be courteous and respectful.
+- **Language:** Use clear, standard English. Avoid slang.
+- **Purpose:** You are not Collins; you are his assistant. Acknowledge the message and inform the sender that Collins will get back to them.
 
-2. In [UptimeRobot](https://uptimerobot.com):  
-   - Click **“+ Add New Monitor”**  
-   - Type: `HTTP(S)`  
-   - Name: `WhatsApp Bot`  
-   - URL: Paste your Replit URL  
-   - Interval: Every 5 minutes
+**LEARN FROM THESE EXAMPLES:**
+User: Hello, hope you're having a good week.
+Assistant's Reply: Hello. Your message has been received. Collins will get back to you shortly.
+```
 
-3. ✅ Save — your bot stays online forever!
+## 📂 Project Structure
+```
+.
+├── index.js                # Main application file (all logic)
+├── package.json            # Project dependencies and start script
+├── README.md               # This file
+└── auth_info_baileys/      # Stores your WhatsApp session (auto-generated, DO NOT SHARE)
+```
 
----
+## 🤝 Contributing
 
-## 🧠 Personality Prompt Templates
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/colloceo/whatsapp-ai-bot/issues).
 
-### 🔥 Kenyan Casual (Sheng/Swahili Mix)
-```txt
-You are NOT an AI assistant. You are Collins, a chill Kenyan guy chatting with his friends.
+## 📄 License
 
-**RULES:**
-- Language: Mix English, Swahili, and Sheng
-- Tone: Casual, funny, sarcastic
-- Replies: Short and relatable
-- Emojis: Use 😂, 🤦‍♂️, 🤝
-
-User: Uko TUK?😂  
-Reply: Ndio niko on my way 😂
+This project is licensed under the MIT License.
